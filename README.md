@@ -2,16 +2,16 @@
 
 Base number conversion utility.
 
-A little project to learn about libc standard libraries, make and
-libraries made in C.
+A little project to learn about libc standard libraries and
+how to make projects in C.
 
-# Using base.c
+## Using base.c
 
 Usage: `base [OPTIONS] NUMBER...`
 
-# Build, install, test...
+## Build, install, test...
 
-system dependencies:
+System dependencies:
 - gnu make
 - C compiler (gcc, clang, zig... )
 
@@ -19,7 +19,7 @@ system dependencies:
 # Build project
 make
 
-# Test
+# Test project
 make test
 
 # Install on system
@@ -29,6 +29,6 @@ make install
 make uninstall
 ```
 
-# License
+## License
 
 [MIT License](./LICENSE)
