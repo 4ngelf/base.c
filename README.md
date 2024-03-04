@@ -2,9 +2,6 @@
 
 Base number conversion utility.
 
-A little project to learn about libc standard libraries and
-how to make projects in C.
-
 ## Using base.c
 
 Usage: `base [OPTIONS] NUMBER...`
