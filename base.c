@@ -63,9 +63,24 @@ int hash_str(char *string){
 		size_t index = 0;
 		while (string[index]){
 			sum += (int)(string[index] * string[index]) % INT_MAX;
+			index++;
 		}
 
 		return sum
+}
+
+int parseint(char *string, int default_){
+		int result = 0;
+		int index = 0;
+		while(string[index]){
+			result *= 10;
+			if (string[index] >= '0' && string[index] <= '9'){
+				return default_;
+			}
+			result += (int)(string[index] - '0')
+			index++;
+		}
+		return result;
 }
 
 struct ParsedArgs parse_args(size_t argc, const char *argv[]){
@@ -74,8 +89,8 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 		// Stop looking for options if - not found on arg
 		// Stop looking for options if -- without long name found
 		// return struct with the rest of args
-		char from = 10;
-		char to = 16;
+		int from = 10;
+		int to = 16;
 		int i;
 		for (i = 0; i < argc; i++){
 			if (argv[i][0] != '-' || !argv[i][1]) { 
@@ -92,16 +107,22 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 				print_help(stdout, argv[0]);
 				exit(EXIT_SUCCESS);
 			} else if (STREQ("-f", argv[i]) || STREQ("--from", argv[i])){
-				// TODO: take next argument, increment index by one
+				from = parseint(argv[i + 1], from);
+				i++;
 			} else if (STREQ("-t", argv[i]) || STREQ("--to", argv[i])){
-				// TODO: take next argument, increment index by one
+				to = parseint(argv[i + 1], to);
+				i++;
+			} else if (STREQ("--", argv[i])){
+				argc -= (i + 1);
+				argv += (i + 1);
+				break;
 			} else {
 				print_help(stderr, argv[0]);
 				exit(EXIT_FAILURE);
 			}
 
 		}
-		struct ParsedArgs parsed = { from, to, argc, argv };
+		struct ParsedArgs parsed = { (char) from, (char) to, argc, argv };
 		return parsed;
 }
 
