@@ -30,6 +30,9 @@
 
 #define VERSION "v0.1.0"
 
+#define STREQ(STR1, STR2) strcmp(STR1, STR2) == 0
+
+
 struct ParsedArgs {
 		char from;
 		char to;
@@ -55,6 +58,16 @@ void print_version(FILE *stream, const char *arg0){
 		fprintf(stream, "%s %s\n", arg0, VERSION);
 }
 
+int hash_str(char *string){
+		int sum = 0;
+		size_t index = 0;
+		while (string[index]){
+			sum += (int)(string[index] * string[index]) % INT_MAX;
+		}
+
+		return sum
+}
+
 struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 		// Iterate over passed args
 		// Look for - characters for options
@@ -64,25 +77,28 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 		char from = 10;
 		char to = 16;
 		int i;
-		last_option = false;
 		for (i = 0; i < argc; i++){
-				if ('-' == argv[i][0]) {
-						switch (argv[i][1]){
-								case '-':
-										break;
-								default:
-										print_help(stderr, argv[0]);
-										exit(EXIT_FAILURE);
-										break;
-						}
-				
+			if (argv[i][0] != '-' || !argv[i][1]) { 
+				// The rest are arguments
+				argc -= i;
+				argv += i;
+				break;
+			}
 
-
-				if (last_option) {
-						argv += i;
-						argc -= i;
-						break;
-				}
+			if (STREQ("-v", argv[i]) || STREQ("--version" , argv[i])){
+				print_version(stdout, argv[0]);
+				exit(EXIT_SUCCESS);
+			} else if (STREQ("-h", argv[i]) || STREQ("--help", argv[i])){
+				print_help(stdout, argv[0]);
+				exit(EXIT_SUCCESS);
+			} else if (STREQ("-f", argv[i]) || STREQ("--from", argv[i])){
+				// TODO: take next argument, increment index by one
+			} else if (STREQ("-t", argv[i]) || STREQ("--to", argv[i])){
+				// TODO: take next argument, increment index by one
+			} else {
+				print_help(stderr, argv[0]);
+				exit(EXIT_FAILURE);
+			}
 
 		}
 		struct ParsedArgs parsed = { from, to, argc, argv };
