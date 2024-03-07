@@ -19,8 +19,7 @@ jobs:
         with:
           # only 'update' a single comment in a pull request's thread.
           style: 'llvm'
-          extensions: 'c,h,C,H,cpp,hpp,cc,hh,c++,h++,cxx,hxx'
-          tidy_checks: 'boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-*,cppcoreguidelines-*'
+          step-summary: true
           thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
       - name: Fail fast?!
         if: steps.linter.outputs.checks-failed > 0
