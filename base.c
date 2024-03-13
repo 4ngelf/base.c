@@ -1,4 +1,4 @@
-/* 
+/*
  * base.c - Base number conversion utility
  *
  * The MIT License (MIT)
@@ -79,10 +79,10 @@ int parseuintl(char *string, int len){
 }
 
 /* Compare two strings up to 'len' characters.
- * 
+ *
  * returns 0 on equal.
  * returns non zero on non equal */
-int strcmpl(char *str1, char *str2, int len){
+int strcmpl(const char *str1, const char *str2, int len){
 	int cmp = 0;
 	for (int i = 0; i < len; i++){
 		cmp = str1[i] - str2[i];
@@ -116,7 +116,7 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 	// ---------------------------------------
 	int from = 10;
 	int to = 16;
-	
+
 	// ---------------------------------------
 	// loop controllers
 	// ---------------------------------------
@@ -147,7 +147,7 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 			index++;
 			break;
 		}
-		
+
 		if (argv[index][0] != '-' || !argv[index][1]){
 			finished = true;
 			break;
@@ -157,7 +157,7 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 		// Determine which option to operate
 		// ---------------------------------------
 		int is_long = strcmpl("--", argv[index], 2) == 0;
-		
+
 		for (int j = 0; j < (sizeof(options) / sizeof(options[0])); j++){
 			char *subject = is_long ? options[j].long_name : options[j].name;
 			int subject_len = strlen(subject);
@@ -176,7 +176,7 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 				} else {
 					str_value = argv[index] + subject_len;
 				}
-				
+
 				int_value = parseuintl(str_value, 2);
 			}
 
@@ -214,14 +214,14 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 			finished = true;
 			break;
 		}
-	
+
 	}
 
 	struct ParsedArgs parsed = { (char) from, (char) to, argc - index, argv + index };
 	return parsed;
 }
 
-int main(size_t argc, const char *argv[]) {
+int main(int argc, const char *argv[]) {
 	argv0 = argv[0];
 	struct ParsedArgs parsed = parse_args(argc, argv);
 	printf(
