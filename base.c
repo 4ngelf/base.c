@@ -30,32 +30,30 @@
 
 #define VERSION "v0.1.0"
 
-#define STREQ(STR1, STR2) strcmp(STR1, STR2) == 0
-
 // used by print_help and print_version
-static char* argv0;
+static const char* argv0;
 
 // parsed arguments to operate
 struct ParsedArgs {
-		char from;
-		char to;
-		size_t count;
-		const char **numbers_raw;
+	char from;
+	char to;
+	int count;
+	const char **numbers_raw;
 };
 
 /* prints help on given stream */
 void print_help(FILE *stream) {
-		fprintf(stream, "%s - Base number conversion utility\n\n", argv0);
-		fprintf(stream, "Usage: %s [OPTIONS] NUMBER...\n\n", argv0);
-		const char *options = ""
-				"Options:\n"
-				"    -f, --from N     convert from N base (default: 10)\n"
-				"    -t, -to N        convert to N base (default: 16)\n"
-				"    -h, --help       show this help page\n"
-				"    -v, --version    prints version\n"
-				"";
+	fprintf(stream, "%s - Base number conversion utility\n\n", argv0);
+	fprintf(stream, "Usage: %s [OPTIONS] NUMBER...\n\n", argv0);
+	const char *options = ""
+		"Options:\n"
+		"    -f, --from N     convert from N base (default: 10)\n"
+		"    -t, -to N        convert to N base (default: 16)\n"
+		"    -h, --help       show this help page\n"
+		"    -v, --version    prints version\n"
+		"";
 
-		fprintf(stream, options);
+	fprintf(stream, options);
 }
 
 /* prints version on given stream */
@@ -78,33 +76,6 @@ int parseuintl(char *string, int len){
 	return result;
 }
 
-/* Compare two strings up to 'len' characters.
- *
- * returns 0 on equal.
- * returns non zero on non equal */
-int strcmpl(const char *str1, const char *str2, int len){
-	int cmp = 0;
-	for (int i = 0; i < len; i++){
-		cmp = str1[i] - str2[i];
-	}
-	return cmp;
-}
-
-/* Take argv and returns index as option.
- * returns -1 if not an option.
- * */
-int get_option(size_t *index, int *value, const char *argv[], int size_args){
-	// If invalid option use this:
-	// print_help(stderr, argv[0]);
-	// exit(EXIT_FAILURE);
-	if (argv[*index][0] != '-' || !argv[*index][1]){
-		return -1;
-	}
-
-
-
-	(*index)++;
-}
 
 /* Process list argc and argv and return a struct of ParsedArgs
  *
@@ -143,7 +114,7 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 		// ---------------------------------------
 		// Checks
 		// ---------------------------------------
-		if (strcmpl("--", argv[index], 3) == 0){
+		if (strncmp("--", argv[index], 3) == 0){
 			index++;
 			break;
 		}
@@ -156,12 +127,11 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 		// ---------------------------------------
 		// Determine which option to operate
 		// ---------------------------------------
-		int is_long = strcmpl("--", argv[index], 2) == 0;
-
+		int is_long = strncmp("--", argv[index], 2) == 0;
 		for (int j = 0; j < (sizeof(options) / sizeof(options[0])); j++){
 			char *subject = is_long ? options[j].long_name : options[j].name;
 			int subject_len = strlen(subject);
-			if (strcmpl(subject, argv[index], subject_len) == 0){
+			if (strncmp(subject, argv[index], subject_len) == 0){
 				selected_option = j;
 			} else {
 				print_help(stderr);
@@ -221,7 +191,12 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 	return parsed;
 }
 
-int main(int argc, const char *argv[]) {
+/* Take the parameters processed from command arguments and print results on stdout */
+int base_arg(int from, int to, const char *number_raw){
+	
+}
+
+int main(size_t argc, const char *argv[]) {
 	argv0 = argv[0];
 	struct ParsedArgs parsed = parse_args(argc, argv);
 	printf(
@@ -235,5 +210,10 @@ int main(int argc, const char *argv[]) {
 	}
 	puts("");
 
-	return 0;
+
+	for (int i = 0; i < parsed.count; i++){
+		base_arg(parsed.from, parsed.to, parsed.numbers_raw[i]);
+	}
+
+	return EXIT_SUCCESS;
 }
