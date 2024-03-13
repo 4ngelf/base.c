@@ -32,7 +32,10 @@
 
 #define STREQ(STR1, STR2) strcmp(STR1, STR2) == 0
 
+// used by print_help and print_version
+static char* argv0;
 
+// parsed arguments to operate
 struct ParsedArgs {
 		char from;
 		char to;
@@ -40,9 +43,10 @@ struct ParsedArgs {
 		const char **numbers_raw;
 };
 
-void print_help(FILE *stream, const char *arg0) {
-		fprintf(stream, "%s - Base number conversion utility\n\n", arg0);
-		fprintf(stream, "Usage: %s [OPTIONS] NUMBER...\n\n", arg0);
+/* prints help on given stream */
+void print_help(FILE *stream) {
+		fprintf(stream, "%s - Base number conversion utility\n\n", argv0);
+		fprintf(stream, "Usage: %s [OPTIONS] NUMBER...\n\n", argv0);
 		const char *options = ""
 				"Options:\n"
 				"    -f, --from N     convert from N base (default: 10)\n"
@@ -54,90 +58,182 @@ void print_help(FILE *stream, const char *arg0) {
 		fprintf(stream, options);
 }
 
-void print_version(FILE *stream, const char *arg0){
-		fprintf(stream, "%s %s\n", arg0, VERSION);
+/* prints version on given stream */
+void print_version(FILE *stream){
+		fprintf(stream, "%s %s\n", argv0, VERSION);
 }
 
-int hash_str(char *string){
-		int sum = 0;
-		size_t index = 0;
-		while (string[index]){
-			sum += (int)(string[index] * string[index]) % INT_MAX;
-			index++;
+/* parse non-negative numbers from a string up to 'len' characters and returns the result.
+ *
+ * return -1 in case of failure. */
+int parseuintl(char *string, int len){
+	int result = 0;
+	for (int i = 0; i < len; i++){
+		if (string[i] >= '0' && string[i] <= '9'){
+			result += (int)(string[i] - '0');
+		} else {
+			return -1;
 		}
-
-		return sum
+	}
+	return result;
 }
 
-int parseint(char *string, int default_){
-		int result = 0;
-		int index = 0;
-		while(string[index]){
-			result *= 10;
-			if (string[index] >= '0' && string[index] <= '9'){
-				return default_;
-			}
-			result += (int)(string[index] - '0')
-			index++;
-		}
-		return result;
+/* Compare two strings up to 'len' characters.
+ * 
+ * returns 0 on equal.
+ * returns non zero on non equal */
+int strcmpl(char *str1, char *str2, int len){
+	int cmp = 0;
+	for (int i = 0; i < len; i++){
+		cmp = str1[i] - str2[i];
+	}
+	return cmp;
 }
 
+/* Take argv and returns index as option.
+ * returns -1 if not an option.
+ * */
+int get_option(size_t *index, int *value, const char *argv[], int size_args){
+	// If invalid option use this:
+	// print_help(stderr, argv[0]);
+	// exit(EXIT_FAILURE);
+	if (argv[*index][0] != '-' || !argv[*index][1]){
+		return -1;
+	}
+
+
+
+	(*index)++;
+}
+
+/* Process list argc and argv and return a struct of ParsedArgs
+ *
+ * NOTE: print_help works with hardcoded text so changes here are not
+ *       reflected and need to be edited manually */
 struct ParsedArgs parse_args(size_t argc, const char *argv[]){
-		// Iterate over passed args
-		// Look for - characters for options
-		// Stop looking for options if - not found on arg
-		// Stop looking for options if -- without long name found
-		// return struct with the rest of args
-		int from = 10;
-		int to = 16;
-		int i;
-		for (i = 0; i < argc; i++){
-			if (argv[i][0] != '-' || !argv[i][1]) { 
-				// The rest are arguments
-				argc -= i;
-				argv += i;
-				break;
-			}
+	// ---------------------------------------
+	// Defaults
+	// ---------------------------------------
+	int from = 10;
+	int to = 16;
+	
+	// ---------------------------------------
+	// loop controllers
+	// ---------------------------------------
+	int index = 1;
+	bool finished = false;
+	while (index < argc || !finished){
+		// ---------------------------------------
+		// action controllers
+		// ---------------------------------------
+		int selected_option = -1;
+		int int_value;
 
-			if (STREQ("-v", argv[i]) || STREQ("--version" , argv[i])){
-				print_version(stdout, argv[0]);
-				exit(EXIT_SUCCESS);
-			} else if (STREQ("-h", argv[i]) || STREQ("--help", argv[i])){
-				print_help(stdout, argv[0]);
-				exit(EXIT_SUCCESS);
-			} else if (STREQ("-f", argv[i]) || STREQ("--from", argv[i])){
-				from = parseint(argv[i + 1], from);
-				i++;
-			} else if (STREQ("-t", argv[i]) || STREQ("--to", argv[i])){
-				to = parseint(argv[i + 1], to);
-				i++;
-			} else if (STREQ("--", argv[i])){
-				argc -= (i + 1);
-				argv += (i + 1);
-				break;
+		struct {
+			char *name;
+			char *long_name;
+			bool has_value;
+		} options[] = {
+			{ "-v", "--version", false },
+			{ "-h", "--help", false },
+			{ "-t", "--to", true },
+			{ "-f", "--from", true }
+		};
+
+		// ---------------------------------------
+		// Checks
+		// ---------------------------------------
+		if (strcmpl("--", argv[index], 3) == 0){
+			index++;
+			break;
+		}
+		
+		if (argv[index][0] != '-' || !argv[index][1]){
+			finished = true;
+			break;
+		}
+
+		// ---------------------------------------
+		// Determine which option to operate
+		// ---------------------------------------
+		int is_long = strcmpl("--", argv[index], 2) == 0;
+		
+		for (int j = 0; j < (sizeof(options) / sizeof(options[0])); j++){
+			char *subject = is_long ? options[j].long_name : options[j].name;
+			int subject_len = strlen(subject);
+			if (strcmpl(subject, argv[index], subject_len) == 0){
+				selected_option = j;
 			} else {
-				print_help(stderr, argv[0]);
+				print_help(stderr);
 				exit(EXIT_FAILURE);
 			}
 
+			if (options[j].has_value){
+				char *str_value;
+				if (strlen(argv[index]) == subject_len){
+					index++;
+					str_value = argv[index];
+				} else {
+					str_value = argv[index] + subject_len;
+				}
+				
+				int_value = parseuintl(str_value, 2);
+			}
+
+			if (int_value == -1){
+				print_help(stderr);
+				exit(EXIT_FAILURE);
+			}
 		}
-		struct ParsedArgs parsed = { (char) from, (char) to, argc, argv };
-		return parsed;
+		index++;
+
+		// ---------------------------------------
+		// Actions on options
+		// ---------------------------------------
+		switch (selected_option){
+		// Option --version
+		case 0:
+			print_version(stdout);
+			exit(EXIT_SUCCESS);
+			break;
+		// Option --help
+		case 1:
+			print_help(stdout);
+			exit(EXIT_SUCCESS);
+			break;
+		// Option --to
+		case 2:
+			to = int_value;
+			break;
+		// Option --from
+		case 3:
+			from = int_value;
+			break;
+		// No more options
+		default:
+			finished = true;
+			break;
+		}
+	
+	}
+
+	struct ParsedArgs parsed = { (char) from, (char) to, argc - index, argv + index };
+	return parsed;
 }
 
 int main(size_t argc, const char *argv[]) {
-		struct ParsedArgs parsed = parse_args(argc, argv);
-		printf(
-			"Data parsed:\n"
-			" --from: %i\n"
-			" --to: %i\n"
-			" Numbers: ", parsed.from, parsed.to);
+	argv0 = argv[0];
+	struct ParsedArgs parsed = parse_args(argc, argv);
+	printf(
+		"Data parsed:\n"
+		" --from: %i\n"
+		" --to: %i\n"
+		" Numbers: ", parsed.from, parsed.to);
 
-		for (size_t i = 0; i < parsed.count; i += 1){
-			printf("%s ", parsed.numbers_raw[i]);
-		}
-		puts("");
+	for (size_t i = 0; i < parsed.count; i += 1){
+		printf("%s ", parsed.numbers_raw[i]);
+	}
+	puts("");
 
-		return 0;
+	return 0;
 }
