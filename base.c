@@ -54,7 +54,7 @@ void print_help(FILE *stream) {
 		"    -v, --version    prints version\n"
 		"";
 
-	fprintf(stream, options);
+	fprintf(stream, "%s", options);
 }
 
 /* prints version on given stream */
@@ -65,7 +65,7 @@ void print_version(FILE *stream){
 /* parse non-negative numbers from a string up to 'len' characters and returns the result.
  *
  * return -1 in case of failure. */
-int parseuintl(char *string, int len){
+int parseuintl(const char *string, int len){
 	int result = 0;
 	for (int i = 0; i < len; i++){
 		if (string[i] >= '0' && string[i] <= '9'){
@@ -99,7 +99,7 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 		// action controllers
 		// ---------------------------------------
 		int selected_option = -1;
-		int int_value;
+		int int_value = -1;
 
 		struct {
 			char *name;
@@ -139,17 +139,19 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 				exit(EXIT_FAILURE);
 			}
 
-			if (options[j].has_value){
-				char *str_value;
-				if (strlen(argv[index]) == subject_len){
-					index++;
-					str_value = argv[index];
-				} else {
-					str_value = argv[index] + subject_len;
-				}
-
-				int_value = parseuintl(str_value, 2);
+			if (!options[j].has_value){
+				continue;
 			}
+
+			const char *str_value = NULL;
+			if (strlen(argv[index]) == subject_len){
+				index++;
+				str_value = argv[index];
+			} else {
+				str_value = argv[index] + subject_len;
+			}
+
+			int_value = parseuintl(str_value, 2);
 
 			if (int_value == -1){
 				print_help(stderr);
@@ -193,11 +195,11 @@ struct ParsedArgs parse_args(size_t argc, const char *argv[]){
 }
 
 /* Take the parameters processed from command arguments and print results on stdout */
-int base_arg(int from, int to, const char *number_raw){
+void base_arg(int from, int to, const char *number_raw){
 	
 }
 
-int main(size_t argc, const char *argv[]) {
+int main(int argc, const char *argv[]) {
 	argv0 = argv[0];
 	struct ParsedArgs parsed = parse_args(argc, argv);
 	printf(
@@ -206,7 +208,7 @@ int main(size_t argc, const char *argv[]) {
 		" --to: %i\n"
 		" Numbers: ", parsed.from, parsed.to);
 
-	for (size_t i = 0; i < parsed.count; i += 1){
+	for (int i = 0; i < parsed.count; i += 1){
 		printf("%s ", parsed.numbers_raw[i]);
 	}
 	puts("");
